@@ -4,8 +4,9 @@
 #include <string>
 #include <commctrl.h>
 
-MyEditor::MyEditor(HWND hWnd) {
+MyEditor::MyEditor(HWND hWnd, HINSTANCE hInst) {
     m_hWnd = hWnd;
+    m_hInst = hInst;
     m_max_objects = 140; // 2 * 20 + 100
     m_objects = new Shape * [m_max_objects];
     for (int i = 0; i < m_max_objects; ++i) {
@@ -123,10 +124,6 @@ void MyEditor::OnNotify(HWND hWnd, WPARAM wParam, LPARAM lParam) {
     }
 }
 
-void MyEditor::SetToolbar(HWND hwnd) {
-    m_hwndToolBar = hwnd;
-}
-
 Shape* MyEditor::createShapeBasedOnPrototype(LONG x1, LONG y1, LONG x2, LONG y2) {
     Shape* newShape = nullptr;
     if (dynamic_cast<PointShape*>(m_prototype)) newShape = new PointShape();
@@ -140,4 +137,43 @@ Shape* MyEditor::createShapeBasedOnPrototype(LONG x1, LONG y1, LONG x2, LONG y2)
         newShape->Set(x1, y1, x2, y2);
     }
     return newShape;
+}
+
+void MyEditor::CreateToolbar()
+{
+    m_hwndToolBar = CreateWindowEx(0, TOOLBARCLASSNAME, NULL,
+        WS_CHILD | WS_VISIBLE | WS_BORDER | TBSTYLE_TOOLTIPS,
+        0, 0, 0, 0,
+        m_hWnd, (HMENU)1, m_hInst, NULL);
+    if (!m_hwndToolBar) return;
+
+    SendMessage(m_hwndToolBar, TB_BUTTONSTRUCTSIZE, (WPARAM)sizeof(TBBUTTON), 0);
+
+    // Потрібно додати 2 нові іконки у ваш bitmap IDB_BITMAP1
+    TBADDBITMAP tbab;
+    tbab.hInst = m_hInst;
+    tbab.nID = IDB_BITMAP1; // Припускаємо, що тут тепер 6 іконок
+    SendMessage(m_hwndToolBar, TB_ADDBITMAP, 6, (LPARAM)&tbab);
+
+    TBBUTTON tbb[6];
+    ZeroMemory(tbb, sizeof(tbb));
+
+    tbb[0] = { 0, IDM_TOOL_POINT,   TBSTATE_ENABLED, TBSTYLE_BUTTON, {0}, 0, (INT_PTR)L"Крапка" };
+    tbb[1] = { 1, IDM_TOOL_LINE,    TBSTATE_ENABLED, TBSTYLE_BUTTON, {0}, 0, (INT_PTR)L"Лінія" };
+    tbb[2] = { 2, IDM_TOOL_RECT,    TBSTATE_ENABLED, TBSTYLE_BUTTON, {0}, 0, (INT_PTR)L"Прямокутник" };
+    tbb[3] = { 3, IDM_TOOL_ELLIPSE, TBSTATE_ENABLED, TBSTYLE_BUTTON, {0}, 0, (INT_PTR)L"Еліпс" };
+    tbb[4] = { 4, IDM_TOOL_LINEOO,  TBSTATE_ENABLED, TBSTYLE_BUTTON, {0}, 0, (INT_PTR)L"Лінія з кружечками" };
+    tbb[5] = { 5, IDM_TOOL_CUBE,    TBSTATE_ENABLED, TBSTYLE_BUTTON, {0}, 0, (INT_PTR)L"Куб" };
+
+    SendMessage(m_hwndToolBar, TB_ADDBUTTONS, 6, (LPARAM)&tbb);
+}
+
+// НОВИЙ МЕТОД: Логіка перенесена з Lab31.cpp
+void MyEditor::OnSize()
+{
+    if (m_hwndToolBar)
+    {
+        // Оновлюємо розмір тулбару, який є членом класу
+        SendMessage(m_hwndToolBar, WM_SIZE, 0, 0);
+    }
 }

@@ -11,15 +11,11 @@ WCHAR szTitle[MAX_LOADSTRING];
 WCHAR szWindowClass[MAX_LOADSTRING];
 
 MyEditor* g_editor = nullptr; // Змінено тип
-HWND g_hwndToolBar = NULL;
 
 ATOM MyRegisterClass(HINSTANCE hInstance);
 BOOL InitInstance(HINSTANCE, int);
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK About(HWND, UINT, WPARAM, LPARAM);
-
-void OnCreate(HWND);
-void OnSize(HWND);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     _In_opt_ HINSTANCE hPrevInstance,
@@ -97,11 +93,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     switch (message)
     {
     case WM_CREATE:
-        g_editor = new MyEditor(hWnd);
-        OnCreate(hWnd);
+        g_editor = new MyEditor(hWnd,hInst);
+        g_editor->CreateToolbar();
         break;
     case WM_SIZE:
-        OnSize(hWnd);
+        if (g_editor) // Додамо перевірку, про всяк випадок
+        {
+            g_editor->OnSize();
+        }
         break;
     case WM_NOTIFY:
         g_editor->OnNotify(hWnd, wParam, lParam);
@@ -187,45 +186,3 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     return (INT_PTR)FALSE;
 }
 
-void OnCreate(HWND hWnd)
-{
-    g_hwndToolBar = CreateWindowEx(0, TOOLBARCLASSNAME, NULL,
-        WS_CHILD | WS_VISIBLE | WS_BORDER | TBSTYLE_TOOLTIPS,
-        0, 0, 0, 0,
-        hWnd, (HMENU)1, hInst, NULL);
-    if (!g_hwndToolBar) return;
-
-    SendMessage(g_hwndToolBar, TB_BUTTONSTRUCTSIZE, (WPARAM)sizeof(TBBUTTON), 0);
-
-    // Потрібно додати 2 нові іконки у ваш bitmap IDB_BITMAP1
-    TBADDBITMAP tbab;
-    tbab.hInst = hInst;
-    tbab.nID = IDB_BITMAP1; // Припускаємо, що тут тепер 6 іконок
-    SendMessage(g_hwndToolBar, TB_ADDBITMAP, 6, (LPARAM)&tbab);
-
-    TBBUTTON tbb[6];
-    ZeroMemory(tbb, sizeof(tbb));
-
-    tbb[0] = { 0, IDM_TOOL_POINT,   TBSTATE_ENABLED, TBSTYLE_BUTTON, {0}, 0, (INT_PTR)L"Крапка" };
-    tbb[1] = { 1, IDM_TOOL_LINE,    TBSTATE_ENABLED, TBSTYLE_BUTTON, {0}, 0, (INT_PTR)L"Лінія" };
-    tbb[2] = { 2, IDM_TOOL_RECT,    TBSTATE_ENABLED, TBSTYLE_BUTTON, {0}, 0, (INT_PTR)L"Прямокутник" };
-    tbb[3] = { 3, IDM_TOOL_ELLIPSE, TBSTATE_ENABLED, TBSTYLE_BUTTON, {0}, 0, (INT_PTR)L"Еліпс" };
-    tbb[4] = { 4, IDM_TOOL_LINEOO,  TBSTATE_ENABLED, TBSTYLE_BUTTON, {0}, 0, (INT_PTR)L"Лінія з кружечками" };
-    tbb[5] = { 5, IDM_TOOL_CUBE,    TBSTATE_ENABLED, TBSTYLE_BUTTON, {0}, 0, (INT_PTR)L"Куб" };
-
-    SendMessage(g_hwndToolBar, TB_ADDBUTTONS, 6, (LPARAM)&tbb);
-
-    if (g_editor)
-    {
-        g_editor->SetToolbar(g_hwndToolBar);
-        g_editor->Start(new PointShape()); // Встановлюємо режим за замовчуванням
-    }
-}
-
-void OnSize(HWND hWnd)
-{
-    if (g_hwndToolBar)
-    {
-        SendMessage(g_hwndToolBar, WM_SIZE, 0, 0);
-    }
-}

@@ -4,10 +4,11 @@
 
 class MyEditor {
 public:
-    MyEditor(HWND hWnd);
+    MyEditor(HWND hWnd, HINSTANCE hInst);
     ~MyEditor();
 
-    void SetToolbar(HWND hwnd);
+    void CreateToolbar(); 
+    void OnSize();       
 
     void Start(Shape* prototype); // Універсальний метод для початку редагування
     void OnLDown(HWND hWnd, int x, int y);
@@ -18,6 +19,7 @@ public:
 
 private:
     HWND m_hWnd;
+    HINSTANCE m_hInst = NULL;
     HWND m_hwndToolBar = NULL;
     Shape** m_objects = nullptr;
     int m_count = 0;
