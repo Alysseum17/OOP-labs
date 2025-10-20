@@ -49,8 +49,11 @@ void LineOOShape::Show(HDC hdc) const {
 
     // Малюємо кружечки на кінцях
     const int radius = 5;
-    Ellipse(hdc, x1 - radius, y1 - radius, x1 + radius, y1 + radius);
-    Ellipse(hdc, x2 - radius, y2 - radius, x2 + radius, y2 + radius);
+    EllipseShape firstCicle, secondCicle;
+    firstCicle.Set(x1 - radius, y1 - radius, x1 + radius, y1 + radius);
+    firstCicle.Show(hdc);
+    secondCicle.Set(x2 - radius, y2 - radius, x2 + radius, y2 + radius);
+    secondCicle.Show(hdc);
 }
 
 void CubeShape::Show(HDC hdc) const {
@@ -73,11 +76,11 @@ void CubeShape::Show(HDC hdc) const {
 
     // Малюємо задній прямокутник
     backRect.Set(bx1, by1, bx2, by2);
-    backRect.RectShape::Show(hdc);
+    backRect.Show(hdc);
 
     // Малюємо передній прямокутник
     frontRect.Set(fx1, fy1, fx2, fy2);
-    frontRect.RectShape::Show(hdc);
+    frontRect.Show(hdc);
 
     // Малюємо з'єднувальні лінії
     connectors[0].Set(fx1, fy1, bx1, by1);

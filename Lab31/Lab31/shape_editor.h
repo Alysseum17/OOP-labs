@@ -7,10 +7,11 @@
 
 class ShapeObjectsEditor {
 public:
-    ShapeObjectsEditor(HWND hWnd);
+    ShapeObjectsEditor(HWND hWnd, HINSTANCE hInst);
     ~ShapeObjectsEditor();
 
-    void SetToolbar(HWND hwnd); 
+    void CreateToolbar(); // Створює тулбар
+    void OnSize();        // Обробляє зміну розміру вікна
 
     void StartPointEditor();
     void StartLineEditor();
@@ -26,6 +27,7 @@ public:
 
 private:
     HWND m_hwndToolBar = NULL; 
+    HINSTANCE m_hInst = NULL;
     Shape** m_objects = nullptr;
     int m_count = 0;
     int m_max_objects = 0;

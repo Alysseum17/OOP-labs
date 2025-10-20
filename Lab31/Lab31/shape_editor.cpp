@@ -5,8 +5,9 @@
 #include <string>
 #include <commctrl.h>
 
-ShapeObjectsEditor::ShapeObjectsEditor(HWND hWnd) {
+ShapeObjectsEditor::ShapeObjectsEditor(HWND hWnd, HINSTANCE hInst) {
     m_hWnd = hWnd;
+    m_hInst = hInst;
     m_max_objects = 121; 
     m_objects = new Shape * [m_max_objects];
     for (int i = 0; i < m_max_objects; ++i) {
@@ -173,7 +174,37 @@ void ShapeObjectsEditor::OnNotify(HWND hWnd, WPARAM wParam, LPARAM lParam)
         }
     }
 }
-void ShapeObjectsEditor::SetToolbar(HWND hwnd)
+void ShapeObjectsEditor::CreateToolbar()
 {
-    m_hwndToolBar = hwnd;
+    m_hwndToolBar = CreateWindowEx(0, TOOLBARCLASSNAME, NULL,
+        WS_CHILD | WS_VISIBLE | WS_BORDER | TBSTYLE_TOOLTIPS,
+        0, 0, 0, 0,
+        m_hWnd, (HMENU)1, m_hInst, NULL);
+
+    if (!m_hwndToolBar) return;
+
+    SendMessage(m_hwndToolBar, TB_BUTTONSTRUCTSIZE, (WPARAM)sizeof(TBBUTTON), 0);
+
+    TBADDBITMAP tbab;
+    tbab.hInst = m_hInst; 
+    tbab.nID = IDB_BITMAP1;
+    SendMessage(m_hwndToolBar, TB_ADDBITMAP, 4, (LPARAM)&tbab);
+
+    TBBUTTON tbb[4];
+    ZeroMemory(tbb, sizeof(tbb));
+
+    tbb[0] = { 0, IDM_TOOL_POINT,   TBSTATE_ENABLED, TBSTYLE_BUTTON, {0}, 0, (INT_PTR)L"Крапка" };
+    tbb[1] = { 1, IDM_TOOL_LINE,    TBSTATE_ENABLED, TBSTYLE_BUTTON, {0}, 0, (INT_PTR)L"Лінія" };
+    tbb[2] = { 2, IDM_TOOL_RECT,    TBSTATE_ENABLED, TBSTYLE_BUTTON, {0}, 0, (INT_PTR)L"Прямокутник" };
+    tbb[3] = { 3, IDM_TOOL_ELLIPSE, TBSTATE_ENABLED, TBSTYLE_BUTTON, {0}, 0, (INT_PTR)L"Еліпс" };
+
+    SendMessage(m_hwndToolBar, TB_ADDBUTTONS, 4, (LPARAM)&tbb);
+}
+
+void ShapeObjectsEditor::OnSize()
+{
+    if (m_hwndToolBar)
+    {
+        SendMessage(m_hwndToolBar, WM_SIZE, 0, 0);
+    }
 }
