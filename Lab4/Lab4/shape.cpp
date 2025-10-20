@@ -17,29 +17,11 @@ void LineShape::Show(HDC hdc) const {
 }
 
 void RectShape::Show(HDC hdc) const {
-    HBRUSH hBrush = CreateSolidBrush(RGB(255, 192, 203));
-    HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, hBrush);
-    HPEN hPen = CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
-    HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
-
     Rectangle(hdc, x1, y1, x2, y2);
-
-    SelectObject(hdc, hOldPen);
-    DeleteObject(hPen);
-    SelectObject(hdc, hOldBrush);
-    DeleteObject(hBrush);
 }
 
 void EllipseShape::Show(HDC hdc) const {
-    HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, GetStockObject(WHITE_BRUSH));
-    HPEN hPen = CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
-    HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
-
     Ellipse(hdc, x1, y1, x2, y2);
-
-    SelectObject(hdc, hOldPen);
-    DeleteObject(hPen);
-    SelectObject(hdc, hOldBrush);
 }
 
 void LineOOShape::Show(HDC hdc) const {
