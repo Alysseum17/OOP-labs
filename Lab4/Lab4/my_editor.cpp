@@ -1,5 +1,5 @@
 ﻿#include "my_editor.h"
-#include "resource.h" // Використовуємо ID з вашого проєкту
+#include "resource.h" 
 #include <windowsx.h>
 #include <string>
 #include <commctrl.h>
@@ -7,7 +7,7 @@
 MyEditor::MyEditor(HWND hWnd, HINSTANCE hInst) {
     m_hWnd = hWnd;
     m_hInst = hInst;
-    m_max_objects = 140; // 2 * 20 + 100
+    m_max_objects = 140; 
     m_objects = new Shape * [m_max_objects];
     for (int i = 0; i < m_max_objects; ++i) {
         m_objects[i] = nullptr;
@@ -32,7 +32,6 @@ void MyEditor::Start(Shape* prototype) {
     }
     m_prototype = prototype;
 
-    // Оновлення тексту заголовка вікна
     std::wstring shapeName;
     if (dynamic_cast<PointShape*>(m_prototype)) shapeName = L"Режим: Крапка";
     else if (dynamic_cast<LineOOShape*>(m_prototype)) shapeName = L"Режим: Лінія з кружечками";
@@ -42,7 +41,6 @@ void MyEditor::Start(Shape* prototype) {
     else if (dynamic_cast<EllipseShape*>(m_prototype)) shapeName = L"Режим: Еліпс";
     SetWindowText(m_hWnd, shapeName.c_str());
 
-    // Оновлення стану кнопок на панелі інструментів
     if (m_hwndToolBar) {
         SendMessage(m_hwndToolBar, TB_CHECKBUTTON, IDM_TOOL_POINT, dynamic_cast<PointShape*>(m_prototype) != nullptr);
         SendMessage(m_hwndToolBar, TB_CHECKBUTTON, IDM_TOOL_LINE, dynamic_cast<LineShape*>(m_prototype) && !dynamic_cast<LineOOShape*>(m_prototype));
@@ -73,7 +71,22 @@ void MyEditor::OnLUp(HWND hWnd, int x, int y) {
     if (m_isDrawing) {
         m_isDrawing = false;
         if (m_count < m_max_objects) {
-            Shape* newShape = createShapeBasedOnPrototype(x0, y0, x, y);
+            LONG final_x1 = x0;
+            LONG final_y1 = y0;
+            LONG final_x2 = x;
+            LONG final_y2 = y;
+
+            bool isJustRect = dynamic_cast<RectShape*>(m_prototype) &&
+                !dynamic_cast<CubeShape*>(m_prototype);
+            if (isJustRect) { 
+                LONG dx = abs(x - x0);
+                LONG dy = abs(y - y0);
+                final_x1 = x0 - dx;
+                final_y1 = y0 - dy;
+                final_x2 = x0 + dx;
+                final_y2 = y0 + dy;
+            }
+            Shape* newShape = createShapeBasedOnPrototype(final_x1, final_y1, final_x2, final_y2);
             if (newShape) {
                 m_objects[m_count++] = newShape;
             }
@@ -85,22 +98,30 @@ void MyEditor::OnLUp(HWND hWnd, int x, int y) {
 void MyEditor::OnPaint(HWND hWnd) {
     PAINTSTRUCT ps;
     HDC hdc = BeginPaint(hWnd, &ps);
-
-    // Малювання збережених об'єктів
     for (int i = 0; i < m_count; ++i) {
         if (m_objects[i]) {
             m_objects[i]->Show(hdc);
         }
     }
 
-    // Малювання "гумового" сліду
     if (m_isDrawing && m_prototype) {
-        HPEN hPen = CreatePen(PS_DOT, 1, RGB(0, 0, 0)); // Пунктирна лінія
+        HPEN hPen = CreatePen(PS_DOT, 1, RGB(0, 0, 0)); 
         HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
         HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, GetStockObject(NULL_BRUSH));
 
-        m_prototype->Set(x0, y0, x_temp, y_temp);
-        m_prototype->Show(hdc);
+        bool isJustRect = dynamic_cast<RectShape*>(m_prototype) &&
+            !dynamic_cast<CubeShape*>(m_prototype);
+
+        if (isJustRect) { 
+            LONG dx = abs(x_temp - x0);
+            LONG dy = abs(y_temp - y0);
+            m_prototype->Set(x0 - dx, y0 - dy, x0 + dx, y0 + dy);
+        }
+        else { 
+            m_prototype->Set(x0, y0, x_temp, y_temp);
+        }
+
+        m_prototype->Show(hdc); 
 
         SelectObject(hdc, hOldPen);
         DeleteObject(hPen);
@@ -149,10 +170,9 @@ void MyEditor::CreateToolbar()
 
     SendMessage(m_hwndToolBar, TB_BUTTONSTRUCTSIZE, (WPARAM)sizeof(TBBUTTON), 0);
 
-    // Потрібно додати 2 нові іконки у ваш bitmap IDB_BITMAP1
     TBADDBITMAP tbab;
     tbab.hInst = m_hInst;
-    tbab.nID = IDB_BITMAP1; // Припускаємо, що тут тепер 6 іконок
+    tbab.nID = IDB_BITMAP1;
     SendMessage(m_hwndToolBar, TB_ADDBITMAP, 6, (LPARAM)&tbab);
 
     TBBUTTON tbb[6];
@@ -168,12 +188,40 @@ void MyEditor::CreateToolbar()
     SendMessage(m_hwndToolBar, TB_ADDBUTTONS, 6, (LPARAM)&tbb);
 }
 
-// НОВИЙ МЕТОД: Логіка перенесена з Lab31.cpp
 void MyEditor::OnSize()
 {
     if (m_hwndToolBar)
     {
-        // Оновлюємо розмір тулбару, який є членом класу
         SendMessage(m_hwndToolBar, WM_SIZE, 0, 0);
     }
+}
+
+void MyEditor::OnInitMenuPopup(HMENU hMenu)
+{
+    bool isPoint = false;
+    bool isLine = false;
+    bool isRect = false;
+    bool isEllipse = false;
+    bool isLineOO = false;
+    bool isCube = false;
+
+    if (m_prototype) {
+
+        isPoint = dynamic_cast<PointShape*>(m_prototype) != nullptr;
+        isLineOO = dynamic_cast<LineOOShape*>(m_prototype) != nullptr;
+        isCube = dynamic_cast<CubeShape*>(m_prototype) != nullptr;
+
+        isLine = dynamic_cast<LineShape*>(m_prototype) && !isLineOO && !isCube;
+
+        isRect = dynamic_cast<RectShape*>(m_prototype) && !isCube;
+
+        isEllipse = dynamic_cast<EllipseShape*>(m_prototype) && !isLineOO;
+    }
+
+    CheckMenuItem(hMenu, IDM_OBJ_POINT, MF_BYCOMMAND | (isPoint ? MF_CHECKED : MF_UNCHECKED));
+    CheckMenuItem(hMenu, IDM_OBJ_LINE, MF_BYCOMMAND | (isLine ? MF_CHECKED : MF_UNCHECKED));
+    CheckMenuItem(hMenu, IDM_OBJ_RECT, MF_BYCOMMAND | (isRect ? MF_CHECKED : MF_UNCHECKED));
+    CheckMenuItem(hMenu, IDM_OBJ_ELLIPSE, MF_BYCOMMAND | (isEllipse ? MF_CHECKED : MF_UNCHECKED));
+    CheckMenuItem(hMenu, IDM_OBJ_LINEOO, MF_BYCOMMAND | (isLineOO ? MF_CHECKED : MF_UNCHECKED));
+    CheckMenuItem(hMenu, IDM_OBJ_CUBE, MF_BYCOMMAND | (isCube ? MF_CHECKED : MF_UNCHECKED));
 }

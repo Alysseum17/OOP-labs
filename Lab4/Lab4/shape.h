@@ -10,13 +10,11 @@ public:
     virtual void Show(HDC hdc) const = 0;
 };
 
-// Add the 'virtual' keyword here
 class PointShape : public virtual Shape { public: void Show(HDC hdc) const override; };
 class LineShape : public virtual Shape { public: void Show(HDC hdc) const override; };
 class RectShape : public virtual Shape { public: void Show(HDC hdc) const override; };
 class EllipseShape : public virtual Shape { public: void Show(HDC hdc) const override; };
 
-// No changes needed for these classes
 class LineOOShape : public LineShape, public EllipseShape {
 public:
     void Show(HDC hdc) const override;

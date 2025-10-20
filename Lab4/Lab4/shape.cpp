@@ -42,12 +42,9 @@ void EllipseShape::Show(HDC hdc) const {
     SelectObject(hdc, hOldBrush);
 }
 
-// Реалізація нових класів
 void LineOOShape::Show(HDC hdc) const {
-    // Використовуємо реалізацію з базового класу для малювання лінії
     LineShape::Show(hdc);
 
-    // Малюємо кружечки на кінцях
     const int radius = 5;
     EllipseShape firstCicle, secondCicle;
     firstCicle.Set(x1 - radius, y1 - radius, x1 + radius, y1 + radius);
@@ -57,38 +54,31 @@ void LineOOShape::Show(HDC hdc) const {
 }
 
 void CubeShape::Show(HDC hdc) const {
-    // Визначаємо геометрію куба
     LONG side = abs(x2 - x1);
     LONG dx = side / 2;
     LONG dy = side / 2;
 
-    // Координати переднього прямокутника
     LONG fx1 = x1, fy1 = y1;
     LONG fx2 = x1 + side, fy2 = y1 + side;
 
-    // Координати заднього прямокутника
     LONG bx1 = fx1 + dx, by1 = fy1 - dy;
     LONG bx2 = fx2 + dx, by2 = fy2 - dy;
 
-    // Створюємо тимчасові об'єкти для малювання
     RectShape frontRect, backRect;
     LineShape connectors[4];
 
-    // Малюємо задній прямокутник
     backRect.Set(bx1, by1, bx2, by2);
     backRect.Show(hdc);
 
-    // Малюємо передній прямокутник
     frontRect.Set(fx1, fy1, fx2, fy2);
     frontRect.Show(hdc);
 
-    // Малюємо з'єднувальні лінії
     connectors[0].Set(fx1, fy1, bx1, by1);
     connectors[1].Set(fx2, fy1, bx2, by1);
     connectors[2].Set(fx2, fy2, bx2, by2);
     connectors[3].Set(fx1, fy2, bx1, by2);
 
     for (int i = 0; i < 4; i++) {
-        connectors[i].LineShape::Show(hdc);
+        connectors[i].Show(hdc);
     }
 }

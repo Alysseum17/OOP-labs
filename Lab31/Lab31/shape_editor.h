@@ -10,8 +10,8 @@ public:
     ShapeObjectsEditor(HWND hWnd, HINSTANCE hInst);
     ~ShapeObjectsEditor();
 
-    void CreateToolbar(); // Створює тулбар
-    void OnSize();        // Обробляє зміну розміру вікна
+    void CreateToolbar(); 
+    void OnSize();        
 
     void StartPointEditor();
     void StartLineEditor();

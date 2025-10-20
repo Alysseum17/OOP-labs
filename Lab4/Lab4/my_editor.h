@@ -10,12 +10,13 @@ public:
     void CreateToolbar(); 
     void OnSize();       
 
-    void Start(Shape* prototype); // Універсальний метод для початку редагування
+    void Start(Shape* prototype); 
     void OnLDown(HWND hWnd, int x, int y);
     void OnLUp(HWND hWnd, int x, int y);
     void OnMouseMove(HWND hWnd, int x, int y);
     void OnPaint(HWND hWnd);
     void OnNotify(HWND hWnd, WPARAM wParam, LPARAM lParam);
+    void OnInitMenuPopup(HMENU hMenu);
 
 private:
     HWND m_hWnd;
@@ -25,7 +26,7 @@ private:
     int m_count = 0;
     int m_max_objects = 0;
 
-    Shape* m_prototype = nullptr; // Прототип для малювання "гумового" сліду
+    Shape* m_prototype = nullptr; 
     bool m_isDrawing = false;
     LONG x0{}, y0{};
     LONG x_temp{}, y_temp{};

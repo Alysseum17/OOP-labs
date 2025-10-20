@@ -1,5 +1,5 @@
 ﻿#include "framework.h"
-#include "resource.h" // Використовуємо ваші ID
+#include "resource.h" 
 #include "my_editor.h"
 #include <windowsx.h>
 #include <commctrl.h>
@@ -10,7 +10,7 @@ HINSTANCE hInst;
 WCHAR szTitle[MAX_LOADSTRING];
 WCHAR szWindowClass[MAX_LOADSTRING];
 
-MyEditor* g_editor = nullptr; // Змінено тип
+MyEditor* g_editor = nullptr; 
 
 ATOM MyRegisterClass(HINSTANCE hInstance);
 BOOL InitInstance(HINSTANCE, int);
@@ -97,7 +97,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         g_editor->CreateToolbar();
         break;
     case WM_SIZE:
-        if (g_editor) // Додамо перевірку, про всяк випадок
+        if (g_editor) 
         {
             g_editor->OnSize();
         }
@@ -105,6 +105,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_NOTIFY:
         g_editor->OnNotify(hWnd, wParam, lParam);
         break;
+    case WM_INITMENUPOPUP:
+    {
+        HMENU hMenu = GetMenu(hWnd);
+        if (hMenu && g_editor) {
+            HMENU hSubMenu = GetSubMenu(hMenu, 1);
+            if ((HMENU)wParam == hSubMenu) {
+                g_editor->OnInitMenuPopup((HMENU)wParam);
+            }
+        }
+        break;
+    }
     case WM_COMMAND:
     {
         int wmId = LOWORD(wParam);
@@ -116,7 +127,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         case IDM_EXIT:
             DestroyWindow(hWnd);
             break;
-            // Оновлена логіка вибору інструмента
         case IDM_OBJ_POINT:
         case IDM_TOOL_POINT:
             g_editor->Start(new PointShape());
