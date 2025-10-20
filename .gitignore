@@ -1,0 +1,17 @@
+
+**/.vs/
+**/[Bb]in/
+**/[Oo]bj/
+**/[Xx]64/
+**/*[Dd]ebug/
+**/*[Rr]elease/
+**/packages/
+**/*.exe
+**/*.pdb
+**/*.obj
+**/*.ilk
+**/*.dll
+**/*.suo
+**/*.user
+**/*.ipch
+**/*.sdf
