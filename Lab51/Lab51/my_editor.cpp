@@ -1,61 +1,91 @@
 ﻿#include "my_editor.h"
-#include "resource.h" // Або ваш головний .h файл
+#include "resource.h"
 #include <windowsx.h>
 #include <string>
 #include <commctrl.h>
 #include <fstream>
-#include <codecvt> // Потрібно додати на початку файлу
-#include <locale>  // Потрібно додати на початку файлу
+#include <codecvt>
+#include <locale>
 #include <cstdio>
+#include <cmath>
 
 MyEditor* MyEditor::p_instance = nullptr;
 
 MyEditor* MyEditor::getInstance(HWND hWnd) {
-    if (!p_instance) {
-        p_instance = new MyEditor(hWnd);
-    }
+    if (!p_instance) p_instance = new MyEditor(hWnd);
     return p_instance;
 }
 
-MyEditor::MyEditor(HWND hWnd) {
-    m_hWnd = hWnd;
-    m_max_objects = 120; // 20 + 100
+MyEditor::MyEditor(HWND hWnd) : m_hWnd(hWnd) {
+    m_max_objects = 120; // Або ваш розрахунок
     m_objects = new Shape * [m_max_objects];
-    for (int i = 0; i < m_max_objects; ++i) {
-        m_objects[i] = nullptr;
-    }
-  /*  std::ofstream ofs("shapes.txt", std::ofstream::out | std::ofstream::trunc);
-    ofs.close();*/
+    for (int i = 0; i < m_max_objects; ++i) m_objects[i] = nullptr;
 }
 
 MyEditor::~MyEditor() {
-    for (int i = 0; i < m_count; ++i) {
-        if (m_objects[i]) delete m_objects[i];
-    }
+    for (int i = 0; i < m_count; ++i) if (m_objects[i]) delete m_objects[i];
     delete[] m_objects;
     if (m_prototype) delete m_prototype;
 }
 
-void MyEditor::RegisterCallback(EditorCallback callback) {
-    m_callback = callback;
+void MyEditor::RegisterCallback(EditorCallback callback) { m_callback = callback; }
+void MyEditor::SetToolbar(HWND hwnd) { m_hwndToolBar = hwnd; }
+
+void MyEditor::CreateToolbar(HINSTANCE hInst) {
+    INITCOMMONCONTROLSEX icex; // Ініціалізація потрібна тут
+    icex.dwSize = sizeof(INITCOMMONCONTROLSEX);
+    icex.dwICC = ICC_BAR_CLASSES;
+    InitCommonControlsEx(&icex);
+
+    m_hwndToolBar = CreateWindowEx(0, TOOLBARCLASSNAME, NULL,
+        WS_CHILD | WS_VISIBLE | WS_BORDER | TBSTYLE_TOOLTIPS,
+        0, 0, 0, 0, m_hWnd, (HMENU)1, hInst, NULL);
+    if (!m_hwndToolBar) return;
+    SendMessage(m_hwndToolBar, TB_BUTTONSTRUCTSIZE, (WPARAM)sizeof(TBBUTTON), 0);
+    TBADDBITMAP tbab;
+    tbab.hInst = hInst;
+    tbab.nID = IDB_BITMAP1;
+    SendMessage(m_hwndToolBar, TB_ADDBITMAP, 6, (LPARAM)&tbab);
+    TBBUTTON tbb[6];
+    ZeroMemory(tbb, sizeof(tbb));
+    tbb[0] = { 0, IDM_TOOL_POINT,   TBSTATE_ENABLED, TBSTYLE_BUTTON | BTNS_CHECKGROUP, {0}, 0, (INT_PTR)L"Крапка" };
+    tbb[1] = { 1, IDM_TOOL_LINE,    TBSTATE_ENABLED, TBSTYLE_BUTTON | BTNS_CHECKGROUP, {0}, 0, (INT_PTR)L"Лінія" };
+    tbb[2] = { 2, IDM_TOOL_RECT,    TBSTATE_ENABLED, TBSTYLE_BUTTON | BTNS_CHECKGROUP, {0}, 0, (INT_PTR)L"Прямокутник" };
+    tbb[3] = { 3, IDM_TOOL_ELLIPSE, TBSTATE_ENABLED, TBSTYLE_BUTTON | BTNS_CHECKGROUP, {0}, 0, (INT_PTR)L"Еліпс" };
+    tbb[4] = { 4, IDM_TOOL_LINEOO,  TBSTATE_ENABLED, TBSTYLE_BUTTON | BTNS_CHECKGROUP, {0}, 0, (INT_PTR)L"ЛініяОО" };
+    tbb[5] = { 5, IDM_TOOL_CUBE,    TBSTATE_ENABLED, TBSTYLE_BUTTON | BTNS_CHECKGROUP, {0}, 0, (INT_PTR)L"Куб" };
+    SendMessage(m_hwndToolBar, TB_ADDBUTTONS, 6, (LPARAM)&tbb);
+    Start(new PointShape()); // Інструмент за замовчуванням
 }
 
-void MyEditor::SetToolbar(HWND hwnd) {
-    m_hwndToolBar = hwnd;
+void MyEditor::OnSize() {
+    if (m_hwndToolBar) SendMessage(m_hwndToolBar, WM_SIZE, 0, 0);
 }
 
 void MyEditor::Start(Shape* prototype) {
-    if (m_prototype) {
-        delete m_prototype;
-    }
+    if (m_isDrawing) { m_isDrawing = false; InvalidateRect(m_hWnd, nullptr, TRUE); }
+    if (m_prototype) delete m_prototype;
     m_prototype = prototype;
+    m_selectedIndex = -1;
+    InvalidateRect(m_hWnd, nullptr, TRUE);
+    std::wstring shapeName = L"Режим: ";
+    if (!m_prototype) shapeName += L"Не вибрано";
+    else shapeName += m_prototype->GetName();
+    SetWindowText(m_hWnd, shapeName.c_str());
+    if (m_hwndToolBar && m_prototype) {
+        SendMessage(m_hwndToolBar, TB_CHECKBUTTON, IDM_TOOL_POINT, (dynamic_cast<PointShape*>(m_prototype) != nullptr));
+        SendMessage(m_hwndToolBar, TB_CHECKBUTTON, IDM_TOOL_LINE, (dynamic_cast<LineShape*>(m_prototype) && !dynamic_cast<LineOOShape*>(m_prototype) && !dynamic_cast<CubeShape*>(m_prototype)));
+        SendMessage(m_hwndToolBar, TB_CHECKBUTTON, IDM_TOOL_RECT, (dynamic_cast<RectShape*>(m_prototype) && !dynamic_cast<CubeShape*>(m_prototype)));
+        SendMessage(m_hwndToolBar, TB_CHECKBUTTON, IDM_TOOL_ELLIPSE, (dynamic_cast<EllipseShape*>(m_prototype) && !dynamic_cast<LineOOShape*>(m_prototype)));
+        SendMessage(m_hwndToolBar, TB_CHECKBUTTON, IDM_TOOL_LINEOO, (dynamic_cast<LineOOShape*>(m_prototype) != nullptr));
+        SendMessage(m_hwndToolBar, TB_CHECKBUTTON, IDM_TOOL_CUBE, (dynamic_cast<CubeShape*>(m_prototype) != nullptr));
+    }
 }
 
 void MyEditor::OnLDown(HWND hWnd, int x, int y) {
     if (m_prototype) {
-        m_isDrawing = true;
-        x0 = x_temp = x;
-        y0 = y_temp = y;
+        m_isDrawing = true; x0 = x_temp = x; y0 = y_temp = y;
+        m_selectedIndex = -1; InvalidateRect(hWnd, nullptr, TRUE);
     }
 }
 
@@ -63,13 +93,14 @@ void MyEditor::OnLUp(HWND hWnd, int x, int y) {
     if (m_isDrawing) {
         m_isDrawing = false;
         if (m_count < m_max_objects) {
-            Shape* newShape = createShapeBasedOnPrototype(x0, y0, x, y);
+            LONG fx1 = x0, fy1 = y0, fx2 = x, fy2 = y;
+            bool isJustRect = dynamic_cast<RectShape*>(m_prototype) && !dynamic_cast<CubeShape*>(m_prototype);
+            if (isJustRect) { LONG dx = abs(x - x0), dy = abs(y - y0); fx1 = x0 - dx; fy1 = y0 - dy; fx2 = x0 + dx; fy2 = y0 + dy; }
+            Shape* newShape = createShapeBasedOnPrototype(fx1, fy1, fx2, fy2);
             if (newShape) {
-                m_objects[m_count++] = newShape;
-                saveShapeToFile(newShape);
+                m_objects[m_count++] = newShape; saveShapeToFile(newShape);
                 if (m_callback) {
-                    LONG sx1, sy1, sx2, sy2;
-                    newShape->GetCoords(sx1, sy1, sx2, sy2);
+                    LONG sx1, sy1, sx2, sy2; newShape->GetCoords(sx1, sy1, sx2, sy2);
                     m_callback(EDITOR_ACTION_ADD, newShape->GetName(), sx1, sy1, sx2, sy2, m_count - 1);
                 }
             }
@@ -79,48 +110,43 @@ void MyEditor::OnLUp(HWND hWnd, int x, int y) {
 }
 
 void MyEditor::OnMouseMove(HWND hWnd, int x, int y) {
-    if (m_isDrawing) {
-        x_temp = x;
-        y_temp = y;
-        InvalidateRect(hWnd, nullptr, TRUE);
-    }
+    if (m_isDrawing) { x_temp = x; y_temp = y; InvalidateRect(hWnd, nullptr, TRUE); }
 }
 
 void MyEditor::OnPaint(HWND hWnd) {
-    PAINTSTRUCT ps;
-    HDC hdc = BeginPaint(hWnd, &ps);
-
+    PAINTSTRUCT ps; HDC hdc = BeginPaint(hWnd, &ps);
     for (int i = 0; i < m_count; ++i) {
         if (m_objects[i]) {
             if (i == m_selectedIndex) {
-                HPEN hPen = CreatePen(PS_SOLID, 3, RGB(255, 0, 0));
-                HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
-                m_objects[i]->Show(hdc);
-                SelectObject(hdc, hOldPen);
-                DeleteObject(hPen);
+                HPEN hSelectPen = CreatePen(PS_SOLID, 3, RGB(255, 0, 0));
+                m_objects[i]->Show(hdc, hSelectPen, nullptr);
+                DeleteObject(hSelectPen);
             }
             else {
                 m_objects[i]->Show(hdc);
             }
         }
     }
-
     if (m_isDrawing && m_prototype) {
-        HPEN hPen = CreatePen(PS_DOT, 1, RGB(0, 0, 0));
-        HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
-        HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, GetStockObject(NULL_BRUSH));
-        m_prototype->Set(x0, y0, x_temp, y_temp);
-        m_prototype->Show(hdc);
-        SelectObject(hdc, hOldPen);
-        DeleteObject(hPen);
-        SelectObject(hdc, hOldBrush);
+        HPEN hDotPen = CreatePen(PS_DOT, 1, RGB(0, 0, 0));
+        HBRUSH hNullBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
+        HPEN hOldPen = (HPEN)SelectObject(hdc, hDotPen);
+        HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, hNullBrush);
+        LONG xs = x0, ys = y0, xe = x_temp, ye = y_temp;
+        bool isJustRect = dynamic_cast<RectShape*>(m_prototype) && !dynamic_cast<CubeShape*>(m_prototype);
+        if (isJustRect) { LONG dx = abs(xe - xs), dy = abs(ye - ys); xs = x0 - dx; ys = y0 - dy; xe = x0 + dx; ye = y0 + dy; }
+        m_prototype->Set(xs, ys, xe, ye);
+        m_prototype->Show(hdc, hDotPen, hNullBrush); // Передаємо стиль
+        SelectObject(hdc, hOldPen); SelectObject(hdc, hOldBrush);
+        DeleteObject(hDotPen);
     }
     EndPaint(hWnd, &ps);
 }
 
 void MyEditor::OnNotify(HWND hWnd, WPARAM wParam, LPARAM lParam) {
+    if (lParam == NULL || m_hwndToolBar == NULL) return;
     LPNMHDR pnmh = (LPNMHDR)lParam;
-    if (pnmh->code == TTN_NEEDTEXT) {
+    if (pnmh->hwndFrom == m_hwndToolBar && pnmh->code == TTN_NEEDTEXT) {
         LPTOOLTIPTEXT lpttt = (LPTOOLTIPTEXT)lParam;
         switch (lpttt->hdr.idFrom) {
         case IDM_TOOL_POINT:   lstrcpy(lpttt->szText, L"Крапка"); break;
@@ -134,98 +160,79 @@ void MyEditor::OnNotify(HWND hWnd, WPARAM wParam, LPARAM lParam) {
 }
 
 void MyEditor::SelectShape(int index) {
-    if (index >= 0 && index < m_count) {
-        m_selectedIndex = index;
-    }
-    else {
-        m_selectedIndex = -1;
-    }
+    m_selectedIndex = (index >= 0 && index < m_count) ? index : -1;
     InvalidateRect(m_hWnd, nullptr, TRUE);
+}
+
+void MyEditor::updateFileAfterDeletion() {
+    FILE* file; errno_t err = fopen_s(&file, "shapes.txt", "wb");
+    if (err == 0 && file != nullptr) {
+        unsigned char bom[] = { 0xEF, 0xBB, 0xBF }; fwrite(bom, sizeof(bom), 1, file);
+        for (int i = 0; i < m_count; ++i) {
+            if (m_objects[i]) {
+                const wchar_t* snW = m_objects[i]->GetName(); std::string snA;
+                int len = WideCharToMultiByte(CP_UTF8, 0, snW, -1, NULL, 0, NULL, NULL);
+                if (len > 0) { snA.resize(len - 1); WideCharToMultiByte(CP_UTF8, 0, snW, -1, &snA[0], len, NULL, NULL); }
+                LONG x1, y1, x2, y2; m_objects[i]->GetCoords(x1, y1, x2, y2);
+                fprintf(file, "%s\t%ld\t%ld\t%ld\t%ld\r\n", snA.c_str(), x1, y1, x2, y2);
+            }
+        }
+        fclose(file);
+    }
 }
 
 void MyEditor::DeleteShape(int index) {
     if (index >= 0 && index < m_count) {
         delete m_objects[index];
-        for (int i = index; i < m_count - 1; ++i) {
-            m_objects[i] = m_objects[i + 1];
-        }
-        m_count--;
-        m_selectedIndex = -1;
-
-        if (m_callback) {
-            m_callback(EDITOR_ACTION_DELETE, nullptr, 0, 0, 0, 0, index);
-        }
+        for (int i = index; i < m_count - 1; ++i) m_objects[i] = m_objects[i + 1];
+        m_objects[m_count - 1] = nullptr; m_count--; m_selectedIndex = -1;
+        if (m_callback) m_callback(EDITOR_ACTION_DELETE, nullptr, 0, 0, 0, 0, index);
+        updateFileAfterDeletion();
         InvalidateRect(m_hWnd, nullptr, TRUE);
     }
 }
 
 Shape* MyEditor::createShapeBasedOnPrototype(LONG x1, LONG y1, LONG x2, LONG y2) {
-    Shape* newShape = nullptr;
+    Shape* newShape = nullptr; if (!m_prototype) return nullptr;
     if (dynamic_cast<PointShape*>(m_prototype)) newShape = new PointShape();
     else if (dynamic_cast<LineOOShape*>(m_prototype)) newShape = new LineOOShape();
     else if (dynamic_cast<CubeShape*>(m_prototype)) newShape = new CubeShape();
     else if (dynamic_cast<LineShape*>(m_prototype)) newShape = new LineShape();
     else if (dynamic_cast<RectShape*>(m_prototype)) newShape = new RectShape();
     else if (dynamic_cast<EllipseShape*>(m_prototype)) newShape = new EllipseShape();
-
-    if (newShape) {
-        newShape->Set(x1, y1, x2, y2);
-    }
+    if (newShape) newShape->Set(x1, y1, x2, y2);
     return newShape;
 }
 
 void MyEditor::saveShapeToFile(Shape* shape) {
-    FILE* file;
-    // Відкриваємо файл для дозапису в бінарному режимі ("ab" - append binary)
-    // Це важливо, щоб уникнути проблем з кодуванням системної локалі
-    errno_t err = fopen_s(&file, "shapes.txt", "ab");
-
-    if (err != 0 || file == nullptr) {
-        return; // Не вдалося відкрити файл
-    }
-
-    // Переміщуємо вказівник в кінець файлу, щоб дізнатися його розмір
-    fseek(file, 0, SEEK_END);
-    long fileSize = ftell(file);
-
-    // Якщо файл порожній (його розмір 0), значить ми пишемо в нього вперше.
-    // Потрібно додати маркер BOM, щоб Блокнот зрозумів, що це UTF-8.
-    if (fileSize == 0) {
-        unsigned char bom[] = { 0xEF, 0xBB, 0xBF };
-        fwrite(bom, sizeof(bom), 1, file);
-    }
-
-    // Отримуємо назву фігури (це wchar_t*, тобто UTF-16 у Windows)
-    const wchar_t* shapeNameW = shape->GetName();
-
-    // Конвертуємо назву з UTF-16 в UTF-8 (це стандарт для текстових файлів)
-    std::string shapeNameA;
-    int len = WideCharToMultiByte(CP_UTF8, 0, shapeNameW, -1, NULL, 0, NULL, NULL);
-    if (len > 0) {
-        shapeNameA.resize(len - 1);
-        WideCharToMultiByte(CP_UTF8, 0, shapeNameW, -1, &shapeNameA[0], len, NULL, NULL);
-    }
-
-    // Отримуємо координати
-    LONG x1, y1, x2, y2;
-    shape->GetCoords(x1, y1, x2, y2);
-
-    // Записуємо дані у файл за допомогою fprintf
-    // Використовуємо \r\n для переносу рядка, щоб він коректно відображався у Блокноті
-    fprintf(file, "%s\t%ld\t%ld\t%ld\t%ld\r\n",
-        shapeNameA.c_str(),
-        x1, y1, x2, y2);
-
-    // Обов'язково закриваємо файл
+    if (!shape) return; FILE* file; errno_t err = fopen_s(&file, "shapes.txt", "ab");
+    if (err != 0 || file == nullptr) return;
+    fseek(file, 0, SEEK_END); if (ftell(file) == 0) { unsigned char bom[] = { 0xEF, 0xBB, 0xBF }; fwrite(bom, sizeof(bom), 1, file); }
+    const wchar_t* snW = shape->GetName(); std::string snA;
+    int len = WideCharToMultiByte(CP_UTF8, 0, snW, -1, NULL, 0, NULL, NULL);
+    if (len > 0) { snA.resize(len - 1); WideCharToMultiByte(CP_UTF8, 0, snW, -1, &snA[0], len, NULL, NULL); }
+    LONG x1, y1, x2, y2; shape->GetCoords(x1, y1, x2, y2);
+    fprintf(file, "%s\t%ld\t%ld\t%ld\t%ld\r\n", snA.c_str(), x1, y1, x2, y2);
     fclose(file);
 }
-int MyEditor::GetCount() const {
-    return m_count;
-}
 
-const Shape* MyEditor::GetShape(int index) const {
-    if (index >= 0 && index < m_count) {
-        return m_objects[index];
+int MyEditor::GetCount() const { return m_count; }
+const Shape* MyEditor::GetShape(int index) const { return (index >= 0 && index < m_count) ? m_objects[index] : nullptr; }
+
+void MyEditor::OnInitMenuPopup(HMENU hMenu) {
+    bool isPoint = 0, isLine = 0, isRect = 0, isEllipse = 0, isLineOO = 0, isCube = 0;
+    if (m_prototype) {
+        isPoint = dynamic_cast<PointShape*>(m_prototype) != nullptr;
+        isLineOO = dynamic_cast<LineOOShape*>(m_prototype) != nullptr;
+        isCube = dynamic_cast<CubeShape*>(m_prototype) != nullptr;
+        isLine = dynamic_cast<LineShape*>(m_prototype) && !isLineOO && !isCube;
+        isRect = dynamic_cast<RectShape*>(m_prototype) && !isCube;
+        isEllipse = dynamic_cast<EllipseShape*>(m_prototype) && !isLineOO;
     }
-    return nullptr;
+    CheckMenuItem(hMenu, IDM_OBJ_POINT, MF_BYCOMMAND | (isPoint ? MF_CHECKED : MF_UNCHECKED));
+    CheckMenuItem(hMenu, IDM_OBJ_LINE, MF_BYCOMMAND | (isLine ? MF_CHECKED : MF_UNCHECKED));
+    CheckMenuItem(hMenu, IDM_OBJ_RECT, MF_BYCOMMAND | (isRect ? MF_CHECKED : MF_UNCHECKED));
+    CheckMenuItem(hMenu, IDM_OBJ_ELLIPSE, MF_BYCOMMAND | (isEllipse ? MF_CHECKED : MF_UNCHECKED));
+    CheckMenuItem(hMenu, IDM_OBJ_LINEOO, MF_BYCOMMAND | (isLineOO ? MF_CHECKED : MF_UNCHECKED));
+    CheckMenuItem(hMenu, IDM_OBJ_CUBE, MF_BYCOMMAND | (isCube ? MF_CHECKED : MF_UNCHECKED));
 }
