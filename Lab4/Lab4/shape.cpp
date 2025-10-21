@@ -82,39 +82,32 @@ void EllipseShape::Show(HDC hdc, HPEN hPen, HBRUSH hBrush) {
     if (ownPenCreated) DeleteObject(hPen);
 }
 
-void LineOOShape::Show(HDC hdc, HPEN hPen, HBRUSH hBrush) {
+void LineOOShape::Show(HDC hdc, HPEN hPen , HBRUSH hBrush ) {
+   
     LineShape::Show(hdc, hPen);
-
+    LONG original_x1 = this->x1, original_y1 = this->y1;
+    LONG original_x2 = this->x2, original_y2 = this->y2;
     const int radius = 5;
-    HPEN hLocalOldPen = nullptr;
-    HBRUSH hLocalOldBrush = nullptr;
-    bool penSelected = false;
-    bool brushSelected = false;
-    HPEN hPenToUse = hPen;
-    HBRUSH hBrushToUse = hBrush;
-    bool ownPenCreated = false;
-    bool ownBrushCreated = false;
 
-    if (hPenToUse == nullptr) {
-        hPenToUse = CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
-        ownPenCreated = true;
-    }
-    if (hBrushToUse == nullptr) {
-        hBrushToUse = (HBRUSH)GetStockObject(WHITE_BRUSH);
-    }
+    this->x1 = original_x1 - radius;
+    this->y1 = original_y1 - radius;
+    this->x2 = original_x1 + radius;
+    this->y2 = original_y1 + radius;
 
-    hLocalOldPen = (HPEN)SelectObject(hdc, hPenToUse);
-    hLocalOldBrush = (HBRUSH)SelectObject(hdc, hBrushToUse);
-    penSelected = true;
-    brushSelected = true;
+    EllipseShape::Show(hdc, hPen, hBrush); 
 
-    Ellipse(hdc, x1 - radius, y1 - radius, x1 + radius, y1 + radius);
-    Ellipse(hdc, x2 - radius, y2 - radius, x2 + radius, y2 + radius);
 
-    if (penSelected) SelectObject(hdc, hLocalOldPen);
-    if (brushSelected) SelectObject(hdc, hLocalOldBrush);
+    this->x1 = original_x2 - radius;
+    this->y1 = original_y2 - radius;
+    this->x2 = original_x2 + radius;
+    this->y2 = original_y2 + radius;
 
-    if (ownPenCreated) DeleteObject(hPenToUse);
+    EllipseShape::Show(hdc, hPen, hBrush); 
+    this->x1 = original_x1;
+    this->y1 = original_y1;
+    this->x2 = original_x2;
+    this->y2 = original_y2;
+
 }
 
 
