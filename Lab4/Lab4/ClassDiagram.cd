@@ -7,8 +7,8 @@
       <FileName>my_editor.h</FileName>
     </TypeIdentifier>
     <ShowAsAssociation>
-      <Field Name="m_prototype" />
       <Field Name="m_objects" />
+      <Field Name="m_prototype" />
     </ShowAsAssociation>
   </Class>
   <Class Name="Shape">

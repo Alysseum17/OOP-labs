@@ -1,66 +1,95 @@
 ﻿#include "shape.h"
-#include <cmath>
-
+#include <cmath> 
 Shape::~Shape() = default;
 
 void Shape::Set(LONG ax1, LONG ay1, LONG ax2, LONG ay2) {
     x1 = ax1; y1 = ay1; x2 = ax2; y2 = ay2;
 }
 
-void PointShape::Show(HDC hdc) const {
+
+
+void PointShape::Show(HDC hdc) {
     SetPixel(hdc, x1, y1, RGB(0, 0, 0));
 }
 
-void LineShape::Show(HDC hdc) const {
+void LineShape::Show(HDC hdc) {
     MoveToEx(hdc, x1, y1, nullptr);
     LineTo(hdc, x2, y2);
 }
 
-void RectShape::Show(HDC hdc) const {
+void RectShape::Show(HDC hdc)  {
     Rectangle(hdc, x1, y1, x2, y2);
 }
 
-void EllipseShape::Show(HDC hdc) const {
+void EllipseShape::Show(HDC hdc)  {
     Ellipse(hdc, x1, y1, x2, y2);
 }
 
-void LineOOShape::Show(HDC hdc) const {
+
+void LineOOShape::Show(HDC hdc) {
+
     LineShape::Show(hdc);
 
+    LONG original_x1 = this->x1, original_y1 = this->y1;
+    LONG original_x2 = this->x2, original_y2 = this->y2;
     const int radius = 5;
-    EllipseShape firstCicle, secondCicle;
-    firstCicle.Set(x1 - radius, y1 - radius, x1 + radius, y1 + radius);
-    firstCicle.Show(hdc);
-    secondCicle.Set(x2 - radius, y2 - radius, x2 + radius, y2 + radius);
-    secondCicle.Show(hdc);
+
+    this->x1 = original_x1 - radius; 
+    this->y1 = original_y1 - radius;
+    this->x2 = original_x1 + radius;
+    this->y2 = original_y1 + radius;
+    EllipseShape::Show(hdc); 
+
+    this->x1 = original_x2 - radius; 
+    this->y1 = original_y2 - radius;
+    this->x2 = original_x2 + radius;
+    this->y2 = original_y2 + radius;
+    EllipseShape::Show(hdc); 
+
+    this->x1 = original_x1;
+    this->y1 = original_y1;
+    this->x2 = original_x2;
+    this->y2 = original_y2;
 }
 
-void CubeShape::Show(HDC hdc) const {
-    LONG side = abs(x2 - x1);
-    LONG dx = side / 2;
-    LONG dy = side / 2;
+void CubeShape::Show(HDC hdc) {
+    LONG sideX = abs(x2 - x1);
+    LONG sideY = abs(y2 - y1);
+    float offsetX = static_cast<float>(sideX) / 2.0f; 
+    float offsetY = static_cast<float>(sideY) / 2.0f;
 
-    LONG fx1 = x1, fy1 = y1;
-    LONG fx2 = x1 + side, fy2 = y1 + side;
+    LONG fx1 = x1;
+    LONG fy1 = y1;
+    LONG fx2 = x1 + sideX;
+    LONG fy2 = y1 + sideY;
 
-    LONG bx1 = fx1 + dx, by1 = fy1 - dy;
-    LONG bx2 = fx2 + dx, by2 = fy2 - dy;
+    LONG bx1 = fx1 + static_cast<LONG>(round(offsetX));
+    LONG by1 = fy1 - static_cast<LONG>(round(offsetY));
+    LONG bx2 = fx2 + static_cast<LONG>(round(offsetX));
+    LONG by2 = fy2 - static_cast<LONG>(round(offsetY));
 
-    RectShape frontRect, backRect;
-    LineShape connectors[4];
+   
+    LONG original_x1 = this->x1, original_y1 = this->y1;
+    LONG original_x2 = this->x2, original_y2 = this->y2;
 
-    backRect.Set(bx1, by1, bx2, by2);
-    backRect.Show(hdc);
+    this->x1 = bx1; this->y1 = by1; this->x2 = bx2; this->y2 = by2; 
+    RectShape::Show(hdc); 
 
-    frontRect.Set(fx1, fy1, fx2, fy2);
-    frontRect.Show(hdc);
 
-    connectors[0].Set(fx1, fy1, bx1, by1);
-    connectors[1].Set(fx2, fy1, bx2, by1);
-    connectors[2].Set(fx2, fy2, bx2, by2);
-    connectors[3].Set(fx1, fy2, bx1, by2);
+    this->x1 = fx1; this->y1 = fy1; this->x2 = fx2; this->y2 = fy2; 
+    RectShape::Show(hdc); 
 
-    for (int i = 0; i < 4; i++) {
-        connectors[i].Show(hdc);
-    }
+    this->x1 = fx1; this->y1 = fy1; this->x2 = bx1; this->y2 = by1;
+    LineShape::Show(hdc); 
+    this->x1 = fx2; this->y1 = fy1; this->x2 = bx2; this->y2 = by1;
+    LineShape::Show(hdc);
+    this->x1 = fx2; this->y1 = fy2; this->x2 = bx2; this->y2 = by2;
+    LineShape::Show(hdc);
+    this->x1 = fx1; this->y1 = fy2; this->x2 = bx1; this->y2 = by2;
+    LineShape::Show(hdc);
+
+    this->x1 = original_x1;
+    this->y1 = original_y1;
+    this->x2 = original_x2;
+    this->y2 = original_y2;
 }
