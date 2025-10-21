@@ -95,57 +95,50 @@ void MyEditor::OnLUp(HWND hWnd, int x, int y) {
     }
 }
 
+
+
 void MyEditor::OnPaint(HWND hWnd) {
     PAINTSTRUCT ps;
     HDC hdc = BeginPaint(hWnd, &ps);
-    HPEN hSolidPen = CreatePen(PS_SOLID, 1, RGB(0, 0, 0)); 
-    HPEN hOldPen = (HPEN)SelectObject(hdc, hSolidPen);
-    HBRUSH hDefaultBrush = (HBRUSH)GetStockObject(WHITE_BRUSH); 
-    HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, hDefaultBrush);
     for (int i = 0; i < m_count; ++i) {
         if (m_objects[i]) {
-            HBRUSH hCurrentBrush = hDefaultBrush; 
-            if (dynamic_cast<RectShape*>(m_objects[i]) && !dynamic_cast<CubeShape*>(m_objects[i])) {
-                hCurrentBrush = CreateSolidBrush(RGB(255, 192, 203));
-                SelectObject(hdc, hCurrentBrush);
-            }
-            if (dynamic_cast<CubeShape*>(m_objects[i])) {
-                hCurrentBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
-                SelectObject(hdc, hCurrentBrush);
-            }
             m_objects[i]->Show(hdc);
-            if (hCurrentBrush != hDefaultBrush) {
-                SelectObject(hdc, hDefaultBrush);
-                DeleteObject(hCurrentBrush);
-            }
         }
     }
-    SelectObject(hdc, hOldBrush); 
-    SelectObject(hdc, hOldPen);  
-    DeleteObject(hSolidPen);      
 
     if (m_isDrawing && m_prototype) {
+
         HPEN hDotPen = CreatePen(PS_DOT, 1, RGB(0, 0, 0)); 
-        hOldPen = (HPEN)SelectObject(hdc, hDotPen); 
-        hOldBrush = (HBRUSH)SelectObject(hdc, GetStockObject(NULL_BRUSH));
+        HBRUSH hNullBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
+
+       
+        HPEN hOldPen = (HPEN)SelectObject(hdc, hDotPen);
+        HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, hNullBrush);
+
         LONG x_start = x0;
         LONG y_start = y0;
         LONG x_end = x_temp;
         LONG y_end = y_temp;
-        if (dynamic_cast<RectShape*>(m_prototype) &&
-            !dynamic_cast<CubeShape*>(m_prototype)) {
+        bool isJustRect = dynamic_cast<RectShape*>(m_prototype) &&
+            !dynamic_cast<CubeShape*>(m_prototype);
+        if (isJustRect) {
             LONG dx = abs(x_temp - x0);
             LONG dy = abs(y_temp - y0);
             x_start = x0 - dx; y_start = y0 - dy;
             x_end = x0 + dx; y_end = y0 + dy;
         }
-        m_prototype->Set(x_start, y_start, x_end, y_end);
-        m_prototype->Show(hdc);
 
-        SelectObject(hdc, hOldBrush); 
-        SelectObject(hdc, hOldPen);  
+      
+        m_prototype->Set(x_start, y_start, x_end, y_end);
+
+        m_prototype->Show(hdc, hDotPen, hNullBrush);
+
+        SelectObject(hdc, hOldPen);
+        SelectObject(hdc, hOldBrush);
+
         DeleteObject(hDotPen);
     }
+
     EndPaint(hWnd, &ps);
 }
 
