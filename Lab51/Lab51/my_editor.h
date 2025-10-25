@@ -49,4 +49,6 @@ private:
     Shape* createShapeBasedOnPrototype(LONG x1, LONG y1, LONG x2, LONG y2);
     void saveShapeToFile(Shape* shape);
     void updateFileAfterDeletion();
+    void loadShapesFromFile();
+    Shape* createShapeByName(const std::wstring& name);
 };

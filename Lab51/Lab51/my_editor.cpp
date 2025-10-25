@@ -8,6 +8,7 @@
 #include <locale>
 #include <cstdio>
 #include <cmath>
+#include <sstream> // <--- ДОДАЙТЕ ЦЕЙ РЯДОК
 
 MyEditor* MyEditor::p_instance = nullptr;
 
@@ -20,6 +21,7 @@ MyEditor::MyEditor(HWND hWnd) : m_hWnd(hWnd) {
     m_max_objects = 120; // Або ваш розрахунок
     m_objects = new Shape * [m_max_objects];
     for (int i = 0; i < m_max_objects; ++i) m_objects[i] = nullptr;
+    loadShapesFromFile();
 }
 
 MyEditor::~MyEditor() {
@@ -157,6 +159,56 @@ void MyEditor::OnNotify(HWND hWnd, WPARAM wParam, LPARAM lParam) {
         case IDM_TOOL_CUBE:    lstrcpy(lpttt->szText, L"Куб"); break;
         }
     }
+}
+Shape* MyEditor::createShapeByName(const std::wstring& name) {
+    // Назви взяті з GetName() у shape.h
+    if (name == L"Крапка") return new PointShape();
+    if (name == L"Лінія з кружечками") return new LineOOShape();
+    if (name == L"Куб") return new CubeShape();
+    if (name == L"Лінія") return new LineShape();
+    if (name == L"Прямокутник") return new RectShape();
+    if (name == L"Еліпс") return new EllipseShape();
+    return nullptr;
+}
+
+// Ця функція читає файл "shapes.txt" і заповнює масив m_objects
+void MyEditor::loadShapesFromFile() {
+    // Використовуємо std::wifstream для читання широких символів (wchar_t)
+    std::wifstream wif("shapes.txt");
+    if (!wif.is_open()) {
+        return; // Файлу ще не існує, це нормально
+    }
+
+    // Налаштовуємо потік на правильне читання UTF-8 (який ви використовуєте при збереженні)
+    // std::consume_header автоматично пропустить BOM (Byte Order Mark), який ви записуєте
+    wif.imbue(std::locale(std::locale(),
+        new std::codecvt_utf8<wchar_t, 0x10FFFF, std::consume_header>));
+
+    std::wstring line;
+    // Читаємо файл рядок за рядком
+    while (std::getline(wif, line)) {
+        if (m_count >= m_max_objects) {
+            break; // Досягли ліміту об'єктів
+        }
+
+        std::wstringstream wss(line);
+        std::wstring shapeName;
+        LONG x1, y1, x2, y2;
+        //wchar_t tab; // Для зчитування символів табуляції
+
+        // Парсимо рядок. Формат: "Назва\tX1\tY1\tX2\tY2"
+        if (std::getline(wss, shapeName, L'\t') &&
+            (wss >> x1 >> y1 >> x2 >> y2))
+        {
+            Shape* newShape = createShapeByName(shapeName);
+
+            if (newShape) {
+                newShape->Set(x1, y1, x2, y2);
+                m_objects[m_count++] = newShape; // Додаємо в масив
+            }
+        }
+    }
+    wif.close();
 }
 
 void MyEditor::SelectShape(int index) {
