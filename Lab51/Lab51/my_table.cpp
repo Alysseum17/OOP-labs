@@ -21,10 +21,7 @@ void MyTable::Show(HINSTANCE hInst, HWND hWndParent) {
 void MyTable::AddEntry(const wchar_t* shapeName, LONG x1, LONG y1, LONG x2, LONG y2) {
     if (m_hDlg) {
         wchar_t buffer[256];
-        // Форматуємо рядок з використанням табуляції
         swprintf_s(buffer, 256, L"%s\t%ld\t%ld\t%ld\t%ld", shapeName, x1, y1, x2, y2);
-
-        // Замінюємо LB_ADDSTRING на LB_INSERTSTRING з індексом -1
         SendDlgItemMessage(m_hDlg, IDC_SHAPE_LIST, LB_INSERTSTRING, (WPARAM)-1, (LPARAM)buffer);
     }
 }
@@ -50,11 +47,7 @@ INT_PTR CALLBACK MyTable::DlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM
     switch (message) {
     case WM_INITDIALOG:
     {
-        // Створюємо масив з позиціями для 4-х табуляторів (для 5 колонок)
-        // Ці значення (в dialog units) можна підібрати для кращого вигляду
         int tabs[] = { 100, 140, 180, 220 };
-
-        // Встановлюємо табуляцію для нашого ListBox
         SendDlgItemMessage(hDlg, IDC_SHAPE_LIST, LB_SETTABSTOPS, 4, (LPARAM)tabs);
 
         return (INT_PTR)TRUE;
@@ -76,6 +69,7 @@ INT_PTR CALLBACK MyTable::DlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM
                 }
             }
             break;
+        case IDOK:
         case IDCANCEL:
             DestroyWindow(hDlg);
             break;

@@ -1,5 +1,11 @@
 ﻿#pragma once
 #include "shape.h"
+#include "point_shape.h"
+#include "line_shape.h"
+#include "rect_shape.h"
+#include "ellipse_shape.h"
+#include "lineoo_shape.h"
+#include "cube_shape.h"
 
 enum EditorAction { EDITOR_ACTION_ADD, EDITOR_ACTION_DELETE };
 typedef void (*EditorCallback)(EditorAction action, const wchar_t* shapeName, LONG x1, LONG y1, LONG x2, LONG y2, int index);
@@ -17,7 +23,7 @@ public:
     void SetToolbar(HWND hwnd);
     void CreateToolbar(HINSTANCE hInst);
     void OnSize();
-    void Start(Shape* prototype);
+    void Start(Shape* prototype, int shapeId);
     void OnLDown(HWND hWnd, int x, int y);
     void OnLUp(HWND hWnd, int x, int y);
     void OnMouseMove(HWND hWnd, int x, int y);
@@ -31,7 +37,7 @@ private:
     MyEditor(const MyEditor&) = delete;
     MyEditor& operator=(const MyEditor&) = delete;
     static MyEditor* p_instance;
-
+    int m_currentShapeId = 0;
     HWND m_hWnd;
     EditorCallback m_callback = nullptr;
     int m_selectedIndex = -1;
@@ -46,7 +52,6 @@ private:
     LONG x0{}, y0{};
     LONG x_temp{}, y_temp{};
 
-    Shape* createShapeBasedOnPrototype(LONG x1, LONG y1, LONG x2, LONG y2);
     void saveShapeToFile(Shape* shape);
     void updateFileAfterDeletion();
     void loadShapesFromFile();

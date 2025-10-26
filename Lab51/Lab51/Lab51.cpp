@@ -3,7 +3,7 @@
 #include "my_editor.h"
 #include "my_table.h"
 #include <windowsx.h>
-#include <commctrl.h> // Потрібно для TOOLBARCLASSNAME (перенесено в my_editor.cpp)
+#include <commctrl.h> 
 #include <locale>
 #pragma comment(lib, "comctl32.lib")
 
@@ -13,16 +13,14 @@ HINSTANCE hInst;
 WCHAR szTitle[MAX_LOADSTRING];
 WCHAR szWindowClass[MAX_LOADSTRING];
 
-MyEditor* g_editor = nullptr; // Singleton
+MyEditor* g_editor = nullptr; 
 MyTable g_table;
-// HWND g_hwndToolBar = NULL; // Більше не потрібен
 bool isTableVisible = false;
 
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
-// Глобальні OnCreate / OnSize видалено
 void                TableEventsCallback(TableAction action, int index);
 void                EditorEventsCallback(EditorAction action, const wchar_t* shapeName, LONG x1, LONG y1, LONG x2, LONG y2, int index);
 
@@ -55,7 +53,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance) {
 }
 
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) {
-    hInst = hInstance; // Зберігаємо глобальний hInst
+    hInst = hInstance;
     HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT, 0, 960, 640, nullptr, nullptr, hInstance, nullptr);
     if (!hWnd) return FALSE;
@@ -69,10 +67,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
         g_editor = MyEditor::getInstance(hWnd);
         g_table.RegisterCallback(TableEventsCallback);
         g_editor->RegisterCallback(EditorEventsCallback);
-        g_editor->CreateToolbar(hInst); // Викликаємо метод редактора
+        g_editor->CreateToolbar(hInst); 
+        g_editor->Start(new PointShape(), IDM_OBJ_POINT); 
         break;
     case WM_SIZE:
-        g_editor->OnSize(); // Викликаємо метод редактора
+        g_editor->OnSize(); 
         break;
     case WM_NOTIFY:
         g_editor->OnNotify(hWnd, wParam, lParam);
@@ -103,20 +102,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
                 }
             }
             break;
-        case IDM_OBJ_POINT: case IDM_TOOL_POINT: g_editor->Start(new PointShape()); break;
-        case IDM_OBJ_LINE: case IDM_TOOL_LINE: g_editor->Start(new LineShape()); break;
-        case IDM_OBJ_RECT: case IDM_TOOL_RECT: g_editor->Start(new RectShape()); break;
-        case IDM_OBJ_ELLIPSE: case IDM_TOOL_ELLIPSE: g_editor->Start(new EllipseShape()); break;
-        case IDM_OBJ_LINEOO: case IDM_TOOL_LINEOO: g_editor->Start(new LineOOShape()); break;
-        case IDM_OBJ_CUBE: case IDM_TOOL_CUBE: g_editor->Start(new CubeShape()); break;
+        case IDM_OBJ_POINT:   case IDM_TOOL_POINT:   g_editor->Start(new PointShape(), IDM_OBJ_POINT); break;
+        case IDM_OBJ_LINE:    case IDM_TOOL_LINE:    g_editor->Start(new LineShape(), IDM_OBJ_LINE);  break;
+        case IDM_OBJ_RECT:    case IDM_TOOL_RECT:    g_editor->Start(new RectShape(), IDM_OBJ_RECT);  break;
+        case IDM_OBJ_ELLIPSE: case IDM_TOOL_ELLIPSE: g_editor->Start(new EllipseShape(), IDM_OBJ_ELLIPSE); break;
+        case IDM_OBJ_LINEOO:  case IDM_TOOL_LINEOO:  g_editor->Start(new LineOOShape(), IDM_OBJ_LINEOO); break;
+        case IDM_OBJ_CUBE:    case IDM_TOOL_CUBE:    g_editor->Start(new CubeShape(), IDM_OBJ_CUBE); break;
         default: return DefWindowProc(hWnd, message, wParam, lParam);
         }
-        break; // Додано break
+        break;
     }
     case WM_LBUTTONDOWN: g_editor->OnLDown(hWnd, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)); break;
     case WM_LBUTTONUP: g_editor->OnLUp(hWnd, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)); break;
     case WM_MOUSEMOVE: if (wParam & MK_LBUTTON) g_editor->OnMouseMove(hWnd, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)); break;
-    case WM_PAINT: g_editor->OnPaint(hWnd); break; // Припускаємо, що g_editor вже створено
+    case WM_PAINT: g_editor->OnPaint(hWnd); break; 
     case WM_DESTROY: PostQuitMessage(0); break;
     default: return DefWindowProc(hWnd, message, wParam, lParam);
     }
@@ -131,8 +130,6 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
     }
     return (INT_PTR)FALSE;
 }
-
-// Глобальні OnCreate та OnSize видалено
 
 void TableEventsCallback(TableAction action, int index) {
     switch (action) {
