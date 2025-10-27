@@ -1,9 +1,5 @@
-﻿// 
-// ===== shape.cpp =====
-//
-#include "shape.h"
+﻿#include "shape.h"
 
-// Реалізація методів базового класу
 void Shape::Set(LONG ax1, LONG ay1, LONG ax2, LONG ay2) {
     x1 = ax1; y1 = ay1; x2 = ax2; y2 = ay2;
 }

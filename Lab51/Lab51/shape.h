@@ -1,5 +1,4 @@
-﻿// ===== shape.h (зміни) =====
-#pragma once
+﻿#pragma once
 #include <windows.h>
 #include <string>
 
@@ -13,8 +12,5 @@ public:
 
     virtual void Show(HDC hdc, HPEN hPen = nullptr, HBRUSH hBrush = nullptr) = 0;
     virtual const wchar_t* GetName() const = 0;
-
-    // НОВИЙ МЕТОД:
-    // Кожен нащадок ПОВИНЕН буде реалізувати цей метод
     virtual Shape* Clone() const = 0;
 };

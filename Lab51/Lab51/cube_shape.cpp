@@ -1,5 +1,5 @@
 ﻿#include "cube_shape.h"
-#include <cmath> // Потрібно для round()
+#include <cmath> 
 
 void CubeShape::Show(HDC hdc, HPEN hPen, HBRUSH hBrush) {
     LONG sideX = abs(x2 - x1); LONG sideY = abs(y2 - y1);
@@ -20,22 +20,18 @@ void CubeShape::Show(HDC hdc, HPEN hPen, HBRUSH hBrush) {
     }
     hOldBrush = (HBRUSH)SelectObject(hdc, hActualBrush);
 
-    // Малюємо задню грань
     this->x1 = bx1; this->y1 = by1; this->x2 = bx2; this->y2 = by2;
     RectShape::Show(hdc, hPen, hActualBrush);
-    // Малюємо передню грань
     this->x1 = fx1; this->y1 = fy1; this->x2 = fx2; this->y2 = fy2;
     RectShape::Show(hdc, hPen, hActualBrush);
 
     SelectObject(hdc, hOldBrush);
 
-    // Малюємо 4 з'єднувальні лінії
     this->x1 = fx1; this->y1 = fy1; this->x2 = bx1; this->y2 = by1; LineShape::Show(hdc, hPen);
     this->x1 = fx2; this->y1 = fy1; this->x2 = bx2; this->y2 = by1; LineShape::Show(hdc, hPen);
     this->x1 = fx2; this->y1 = fy2; this->x2 = bx2; this->y2 = by2; LineShape::Show(hdc, hPen);
     this->x1 = fx1; this->y1 = fy2; this->x2 = bx1; this->y2 = by2; LineShape::Show(hdc, hPen);
 
-    // Повертаємо координати
     this->x1 = original_x1; this->y1 = original_y1;
     this->x2 = original_x2; this->y2 = original_y2;
 }

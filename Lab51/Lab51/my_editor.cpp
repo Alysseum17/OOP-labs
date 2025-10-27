@@ -104,9 +104,6 @@ void MyEditor::OnLUp(HWND hWnd, int x, int y) {
         m_isDrawing = false;
         if (m_count < m_max_objects) {
             LONG fx1 = x0, fy1 = y0, fx2 = x, fy2 = y;
-
-            // Ця логіка для "прямокутника від центру" специфічна
-            // Щоб її зберегти, нам все ще потрібен ID
             bool isJustRect = (m_currentShapeId == IDM_OBJ_RECT);
 
             if (isJustRect) {
@@ -114,13 +111,9 @@ void MyEditor::OnLUp(HWND hWnd, int x, int y) {
                 fx1 = x0 - dx; fy1 = y0 - dy; fx2 = x0 + dx; fy2 = y0 + dy;
             }
 
-            // Shape* newShape = createShapeBasedOnPrototype(fx1, fy1, fx2, fy2); // <--- ВИДАЛИТИ ЦЕЙ РЯДОК
-
-            // НОВИЙ КОД:
-            if (!m_prototype) return; // Запобіжник
-            Shape* newShape = m_prototype->Clone(); // <--- ОСЬ ВОНО!
+            if (!m_prototype) return; 
+            Shape* newShape = m_prototype->Clone(); 
             newShape->Set(fx1, fy1, fx2, fy2);
-            // Кінець нового коду
             if (newShape) {
                 m_objects[m_count++] = newShape; saveShapeToFile(newShape);
                 if (m_callback) {

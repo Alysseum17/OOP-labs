@@ -8,8 +8,6 @@ void RectShape::Show(HDC hdc, HPEN hPen, HBRUSH hBrush) {
         ownPenCreated = true;
     }
     if (hBrush == nullptr) {
-        // У вашому коді тут був колір RGB(255, 192, 203)
-        // Ви можете залишити його, або зробити білим, як інші
         hBrush = CreateSolidBrush(RGB(255, 192, 203));
         ownBrushCreated = true;
     }
