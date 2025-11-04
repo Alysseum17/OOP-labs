@@ -155,16 +155,41 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(hWnd, &ps);
+
+        // ================== НОВИЙ КОД ДЛЯ ШРИФТУ ==================
+        HFONT hFont, hOldFont;
+        LOGFONT lf = { 0 };
+
+        // Встановлюємо безпечний шрифт, що 100% підтримує кирилицю
+        lf.lfHeight = 16; // Висота шрифту
+
+        // Оберіть один з цих шрифтів. "Tahoma" дуже надійний.
+        //wcscpy_s(lf.lfFaceName, L"Tahoma");
+         wcscpy_s(lf.lfFaceName, L"Segoe UI"); // Сучасний шрифт Windows
+
+        hFont = CreateFontIndirect(&lf);
+        hOldFont = (HFONT)SelectObject(hdc, hFont);
+        // ==========================================================
+
         RECT rc;
         GetClientRect(hWnd, &rc);
         int yPos = 10;
-        TextOut(hdc, 10, yPos, L"Згенеровані дані:", 17);
+
+        // Тепер TextOut буде використовувати правильний шрифт
+        TextOut(hdc, 10, yPos, L"Згенеровані дані:", 17); // <--- Тут має бути кирилиця
+
         yPos += 20;
         for (const auto& p : g_data) {
             std::wstring text = L"x: " + std::to_wstring(p.x) + L", y: " + std::to_wstring(p.y);
             TextOut(hdc, 10, yPos, text.c_str(), (int)text.length());
             yPos += 20;
         }
+
+        // ================ Очищення Шрифту =================
+        SelectObject(hdc, hOldFont); // Повертаємо старий шрифт
+        DeleteObject(hFont);         // Видаляємо створений
+        // ====================================================
+
         EndPaint(hWnd, &ps);
     }
     break;
