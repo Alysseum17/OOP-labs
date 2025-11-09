@@ -7,18 +7,15 @@
 
 #define MAX_LOADSTRING 100
 
-// Кастомні повідомлення для комунікації
 #define WM_APP_OBJECT2_READY    (WM_USER + 1)
 #define WM_APP_OBJECT3_READY    (WM_USER + 2)
 #define WM_APP_DATA_GENERATED   (WM_USER + 3)
 #define IDM_PROCESS_DATA        (WM_USER + 4)
 
-// Структура для передачі параметрів
 struct DataParams {
     int nPoint, xMin, xMax, yMin, yMax;
 };
 
-// Глобальні змінні
 HINSTANCE hInst;
 WCHAR szTitle[MAX_LOADSTRING];
 WCHAR szWindowClass[MAX_LOADSTRING];
@@ -26,7 +23,6 @@ HWND g_hWndObject2 = NULL;
 HWND g_hWndObject3 = NULL;
 DataParams g_params;
 
-// Прототипи функцій
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);

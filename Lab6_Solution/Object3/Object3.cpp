@@ -8,20 +8,17 @@
 
 #define MAX_LOADSTRING 100
 
-// Повідомлення
 #define WM_APP_OBJECT3_READY    (WM_USER + 2)
-#define IDM_PROCESS_DATA        (WM_USER + 4) // Додано, щоб відповідати Lab6
+#define IDM_PROCESS_DATA        (WM_USER + 4) 
 
 struct Point { int x, y; };
 
-// Глобальні змінні
 HINSTANCE hInst;
 WCHAR szTitle[MAX_LOADSTRING];
 WCHAR szWindowClass[MAX_LOADSTRING];
 std::vector<Point> g_data;
 HWND g_hParent = NULL;
 
-// Прототипи
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
@@ -35,12 +32,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     _In_ int       nCmdShow)
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
-    //UNREFERENCED_PARAMETER(lpCmdLine); // lpCmdLine буде використовуватись
 
     int argc;
     LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
     if (argc > 1) {
-        // Отримуємо HWND батька з аргументів командного рядка
         g_hParent = (HWND)(UINT_PTR)_wtoi(argv[1]);
     }
     LocalFree(argv);
@@ -79,7 +74,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
     wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
     wcex.lpszMenuName = MAKEINTRESOURCEW(IDC_OBJECT3);
-    wcex.lpszClassName = szWindowClass; // Використовуємо IDC_OBJECT3 як ім'я класу
+    wcex.lpszClassName = szWindowClass; 
     wcex.hIconSm = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
     return RegisterClassExW(&wcex);
 }
@@ -102,7 +97,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
     case WM_CREATE:
         if (g_hParent) {
-            // Повідомляємо Lab6, що Object3 готовий
             PostMessage(g_hParent, WM_APP_OBJECT3_READY, (WPARAM)hWnd, 0);
         }
         break;
@@ -111,7 +105,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         int wmId = LOWORD(wParam);
         switch (wmId)
         {
-        case IDM_PROCESS_DATA: // Це повідомлення надсилає Lab6
+        case IDM_PROCESS_DATA:
             ProcessData(hWnd);
             break;
         case IDM_ABOUT:
@@ -132,7 +126,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         RECT rc;
         GetClientRect(hWnd, &rc);
 
-        // Малюємо осі
         int margin = 50;
         MoveToEx(hdc, margin, rc.bottom - margin, NULL); LineTo(hdc, rc.right - 20, rc.bottom - margin); // Ось X
         MoveToEx(hdc, margin, rc.bottom - margin, NULL); LineTo(hdc, margin, 20); // Ось Y
@@ -140,13 +133,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         TextOut(hdc, margin - 10, 5, L"Y", 1);
 
         if (g_data.size() > 1) {
-
-            // ==========================================================
-            // ===             ПОЧАТОК ЗМІН У ЛОГІЦІ                ===
-            // ==========================================================
-
-            // --- Розрахунок діапазону даних ---
-            // g_data вже відсортовано по X у ProcessData
             int maxX = g_data.back().x;
             int minY_data = g_data.front().y, maxY = g_data.front().y;
 
@@ -155,73 +141,49 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 if (p.y > maxY) maxY = p.y;
             }
 
-            // --- Встановлення діапазону осей ---
-            // Примусово починаємо осі з 0
             int minX = 0;
             int minY = 0;
 
-            // Якщо максимальні значення 0, трохи збільшуємо, щоб уникнути ділення на нуль
             if (maxX == 0) maxX = 1;
             if (maxY == 0) maxY = 1;
-
-            // ==========================================================
-            // ===              КІНЕЦЬ ЗМІН У ЛОГІЦІ                ===
-            // ==========================================================
-
 
             double scaleX = (maxX > minX) ? (double)(rc.right - margin - 20 - margin) / (maxX - minX) : 1.0;
             double scaleY = (maxY > minY) ? (double)(rc.bottom - margin - 20 - margin) / (maxY - minY) : 1.0;
 
-            // ==========================================================
-            // ===           Малювання числових міток               ===
-            // ==========================================================
-            SetBkMode(hdc, TRANSPARENT); // Прозорий фон для тексту
 
-            const int nIntervals = 4; // 4 інтервали дадуть 5 міток (0, 25, 50, 75, 100)
+            SetBkMode(hdc, TRANSPARENT);
 
-            // --- Мітки для осі X ---
+            const int nIntervals = 4;
+
             SetTextAlign(hdc, TA_CENTER | TA_TOP);
-            int x_axis_y_pos = rc.bottom - margin + 5; // Позиція Y для міток осі X
+            int x_axis_y_pos = rc.bottom - margin + 5;
 
             for (int i = 0; i <= nIntervals; ++i)
             {
-                // Розраховуємо значення мітки (від 0 до maxX)
                 int currentX = minX + (i * (maxX - minX) / nIntervals);
-                // Розраховуємо позицію мітки в пікселях
                 int pixelX = margin + (int)((currentX - minX) * scaleX);
 
                 std::wstring strX = std::to_wstring(currentX);
                 TextOut(hdc, pixelX, x_axis_y_pos, strX.c_str(), (int)strX.length());
             }
 
-            // --- Мітки для осі Y ---
             SetTextAlign(hdc, TA_RIGHT | TA_BASELINE);
-            int y_axis_x_pos = margin - 10; // Позиція X для міток осі Y
+            int y_axis_x_pos = margin - 10;
 
             for (int i = 0; i <= nIntervals; ++i)
             {
-                // Розраховуємо значення мітки (від 0 до maxY)
                 int currentY = minY + (i * (maxY - minY) / nIntervals);
-                // Розраховуємо позицію мітки в пікселях
                 int pixelY = rc.bottom - margin - (int)((currentY - minY) * scaleY);
-                if (pixelY < 20) pixelY = 20; // Обмеження зверху
+                if (pixelY < 20) pixelY = 20;
 
                 std::wstring strY = std::to_wstring(currentY);
                 TextOut(hdc, y_axis_x_pos, pixelY, strY.c_str(), (int)strY.length());
             }
 
-            // Повертаємо вирівнювання за замовчуванням
             SetTextAlign(hdc, TA_LEFT | TA_TOP);
-            // ==========================================================
-            // ===             Кінець малювання міток               ===
-            // ==========================================================
-
-
-            // --- Крок 1: Малюємо з'єднувальну лінію (синім кольором) ---
-            HPEN hLinePen = CreatePen(PS_SOLID, 1, RGB(100, 100, 255)); // Світло-синій колір
+            HPEN hLinePen = CreatePen(PS_SOLID, 1, RGB(100, 100, 255));
             HPEN hOldPen = (HPEN)SelectObject(hdc, hLinePen);
 
-            // ВАЖЛИВО: Використовуємо нові minX (0) та minY (0) для розрахунку позицій
             int startX = margin + (int)((g_data[0].x - minX) * scaleX);
             int startY = rc.bottom - margin - (int)((g_data[0].y - minY) * scaleY);
             MoveToEx(hdc, startX, startY, NULL);
@@ -234,15 +196,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             SelectObject(hdc, hOldPen);
             DeleteObject(hLinePen);
 
-            // --- Крок 2: Малюємо самі точки (червоним кольором) ---
-            HBRUSH hPointBrush = CreateSolidBrush(RGB(255, 0, 0)); // Червоний пензель для заливки
+            HBRUSH hPointBrush = CreateSolidBrush(RGB(255, 0, 0));
             HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, hPointBrush);
             hOldPen = (HPEN)SelectObject(hdc, GetStockObject(NULL_PEN));
 
-            const int pointRadius = 3; // Радіус точки в пікселях
+            const int pointRadius = 3;
 
             for (const auto& point : g_data) {
-                // ВАЖЛИВО: Використовуємо нові minX (0) та minY (0) для розрахунку позицій
                 int px = margin + (int)((point.x - minX) * scaleX);
                 int py = rc.bottom - margin - (int)((point.y - minY) * scaleY);
                 Ellipse(hdc, px - pointRadius, py - pointRadius, px + pointRadius, py + pointRadius);
@@ -289,17 +249,15 @@ void ProcessData(HWND hWnd) {
 
     std::stringstream ss(clipboardText);
     int x, y;
-    while (ss >> x >> y) { // Читаємо пари x та y
+    while (ss >> x >> y) { 
         g_data.push_back({ x, y });
     }
 
     if (g_data.size() > 1) {
-        // Сортуємо дані по X для коректного малювання графіка
         std::sort(g_data.begin(), g_data.end(), [](const Point& a, const Point& b) {
             return a.x < b.x;
             });
     }
-    // Оновлюємо вікно, щоб викликати WM_PAINT
     InvalidateRect(hWnd, NULL, TRUE);
 }
 
